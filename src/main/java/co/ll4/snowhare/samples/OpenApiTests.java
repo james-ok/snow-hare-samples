@@ -39,7 +39,7 @@ public class OpenApiTests {
         String encrypt = RSAUtils.encrypt(SnowHareConstants.platformPublicKey, contentStr);
 
         Map<String,String> params = new HashMap<>();
-        params.put("appId","1568654be8634ab890b2db09e5128cda");
+        params.put("appId","a812c0b41b324480b6888cb4fb8ada11");
         params.put("method","open.api.shortUrl.delete");
         params.put("version","1.0");
         params.put("requestId", UUID.randomUUID().toString());
@@ -64,7 +64,7 @@ public class OpenApiTests {
         if (responseJson.getInteger("code")!=0) {
             return;
         }
-        // 这里验证签名只需要将加密内容进行验证
+        // 这里验证签名只需要将加密内容进行验证，默认使用RSA2
         boolean verify = RSAUtils.verify(SnowHareConstants.platformPublicKey, responseJson.getString("data"), responseJson.getString("sign"));
         if (!verify) {
             System.out.println("验签失败");
@@ -84,7 +84,7 @@ public class OpenApiTests {
         String encrypt = RSAUtils.encrypt(SnowHareConstants.platformPublicKey, contentStr);
 
         Map<String,String> params = new HashMap<>();
-        params.put("appId","1568654be8634ab890b2db09e5128cda");
+        params.put("appId","a812c0b41b324480b6888cb4fb8ada11");
         params.put("method","open.api.shortUrl.update");
         params.put("version","1.0");
         params.put("requestId", UUID.randomUUID().toString());
@@ -111,7 +111,7 @@ public class OpenApiTests {
             return;
         }
         // 这里验证签名只需要将加密内容进行验证
-        boolean verify = RSAUtils.verify(SnowHareConstants.platformPublicKey, responseJson.getString("data"), responseJson.getString("sign"));
+        boolean verify = RSAUtils.verify(SnowHareConstants.platformPublicKey, responseJson.getString("data"), responseJson.getString("sign"),responseJson.getString("signType"),responseJson.getString("charset"));
         if (!verify) {
             System.out.println("验签失败");
         }
@@ -133,7 +133,7 @@ public class OpenApiTests {
         String encrypt = RSAUtils.encrypt(SnowHareConstants.platformPublicKey, contentStr);
 
         Map<String,String> params = new HashMap<>();
-        params.put("appId","1568654be8634ab890b2db09e5128cda");
+        params.put("appId","a812c0b41b324480b6888cb4fb8ada11");
         params.put("method","open.api.shortUrl.query");
         params.put("version","1.0");
         params.put("requestId", UUID.randomUUID().toString());
@@ -178,17 +178,18 @@ public class OpenApiTests {
         String encrypt = RSAUtils.encrypt(SnowHareConstants.platformPublicKey, contentStr);
 
         Map<String,String> params = new HashMap<>();
-        params.put("appId","1568654be8634ab890b2db09e5128cda");
+        params.put("appId","a812c0b41b324480b6888cb4fb8ada11");
         params.put("method","open.api.shortUrl.create");
         params.put("version","1.0");
         params.put("requestId", UUID.randomUUID().toString());
         params.put("charset","UTF-8");
-        params.put("signType","RSA2");
+        params.put("signType","RSA");
         params.put("content",encrypt);
 
         // 商户私钥签名
         String serializeParams = ParamUtils.sortedSerializeParams(params, "signType");
-        String sign = RSAUtils.sign(SnowHareConstants.merchantPrivateKey, serializeParams);
+        // 签名算法 RSA（SHA1WithRSA）/RSA2（SHA256WithRSA）
+        String sign = RSAUtils.sign(SnowHareConstants.merchantPrivateKey, serializeParams,"SHA1WithRSA","UTF-8");
 
         params.put("sign",sign);
 
@@ -203,8 +204,14 @@ public class OpenApiTests {
         if (responseJson.getInteger("code")!=0) {
             return;
         }
+        String signType = responseJson.getString("signType");
+        if ("RSA".equals(signType)) {
+            signType = "SHA1WithRSA";
+        } else if ("RSA2".equals(signType)) {
+            signType = "SHA256WithRSA";
+        }
         // 这里验证签名只需要将加密内容进行验证
-        boolean verify = RSAUtils.verify(SnowHareConstants.platformPublicKey, responseJson.getString("data"), responseJson.getString("sign"));
+        boolean verify = RSAUtils.verify(SnowHareConstants.platformPublicKey, responseJson.getString("data"), responseJson.getString("sign"),signType,responseJson.getString("charset"));
         if (!verify) {
             System.out.println("验签失败");
         }
