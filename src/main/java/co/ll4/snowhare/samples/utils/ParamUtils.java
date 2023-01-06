@@ -20,7 +20,8 @@ public class ParamUtils {
      * @return
      */
     public static String sortedSerializeParams(Map<String,String> paramMap,String... ignoreParams) {
-        HashSet<String> sortedKeys = new HashSet<>(paramMap.keySet());
+        List<String> sortedKeys = new ArrayList<>(paramMap.keySet());
+        Collections.sort(sortedKeys);
         List<String> ignoreParamList = Arrays.asList(ignoreParams);
         StringBuilder sb = new StringBuilder();
         for (String key : sortedKeys) {
